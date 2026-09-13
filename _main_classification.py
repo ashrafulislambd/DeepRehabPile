@@ -10,6 +10,7 @@ from deep_rehab_pile.classifiers import (
     FCN_CLASSIFIER,
     GRU_CLASSIFIER,
     LITE_MV_CLASSIFIER,
+    LITE_MV_SE_CLASSIFIER,
     STGCN_CLASSIFIER,
     ConvLSTM_CLASSIFIER,
     ConvTran_CLASSIFIER,
@@ -123,6 +124,18 @@ def main_classification(args: DictConfig):
                 epochs=args.epochs,
                 batch_size=args.batch_size,
                 **args.estimator_params["LITEMV"],
+            )
+        elif args.estimator == "LITEMV_SE":
+            classifier = LITE_MV_SE_CLASSIFIER(
+                output_dir=output_dir_run + "/",
+                best_file_name="best_model",
+                init_file_name="init_model",
+                length_TS=length_TS,
+                n_joints=n_joints,
+                n_dim=n_dim,
+                epochs=args.epochs,
+                batch_size=args.batch_size,
+                **args.estimator_params["LITEMV_SE"],
             )
         elif args.estimator == "ConvTran":
             classifier = ConvTran_CLASSIFIER(

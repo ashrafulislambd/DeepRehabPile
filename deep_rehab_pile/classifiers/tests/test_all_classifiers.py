@@ -36,6 +36,7 @@ def test_all_classifiers(deep_cls):
                 and deep_cls.__name__ != "ConvLSTM_CLASSIFIER"
                 and deep_cls.__name__ != "DisjointCNN_CLASSIFIER"
                 and deep_cls.__name__ != "LITE_MV_CLASSIFIER"
+                and deep_cls.__name__ != "LITE_MV_SE_CLASSIFIER"
                 and deep_cls.__name__ != "STGCN_CLASSIFIER"
                 and deep_cls.__name__ != "VanTran_CLASSIFIER"
             ):

@@ -85,6 +85,13 @@ estimator_params:
     strides: 1
     activation: "relu"
 
+  LITEMV_SE:
+    n_filters: 32
+    kernel_size: 40
+    strides: 1
+    activation: "relu"
+    reduction_ratio: 4
+
   STGCN:
     n_temporal_convolution_layers: 3
     n_temporal_filters: 64

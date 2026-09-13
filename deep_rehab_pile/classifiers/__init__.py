@@ -7,6 +7,7 @@ __all__ = [
     "GRU_CLASSIFIER",
     "H_Inception_CLASSIFIER",
     "LITE_MV_CLASSIFIER",
+    "LITE_MV_SE_CLASSIFIER",
     "ConvLSTM_CLASSIFIER",
     "DisjointCNN_CLASSIFIER",
     "STGCN_CLASSIFIER",
@@ -20,6 +21,7 @@ from deep_rehab_pile.classifiers._fcn import FCN_CLASSIFIER
 from deep_rehab_pile.classifiers._gru import GRU_CLASSIFIER
 from deep_rehab_pile.classifiers._hinception import H_Inception_CLASSIFIER
 from deep_rehab_pile.classifiers._lite_mv import LITE_MV_CLASSIFIER
+from deep_rehab_pile.classifiers._lite_mv_se import LITE_MV_SE_CLASSIFIER
 from deep_rehab_pile.classifiers._stgcn import STGCN_CLASSIFIER
 from deep_rehab_pile.classifiers._van_tran import VanTran_CLASSIFIER
 from deep_rehab_pile.classifiers.base import BASE_CLASSIFIER
