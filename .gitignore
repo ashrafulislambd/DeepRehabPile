@@ -219,3 +219,9 @@ cython_debug/
 marimo/_static/
 marimo/_lsp/
 __marimo__/
+
+# Thesis artifacts (report, presentation, etc.)
+extras/
+
+# Confidential project notes (not for public repo)
+PROJECT_NOTES.md
