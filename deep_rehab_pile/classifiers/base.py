@@ -190,6 +190,123 @@ class BASE_CLASSIFIER:
 
             return metric(y_true=y, y_pred=ypred)
 
+    def compute_temporal_cam(
+        self,
+        X: np.ndarray,
+        class_idx: np.ndarray = None,
+    ) -> np.ndarray:
+        """
+        Compute a Grad-CAM style temporal importance curve.
+
+        Highlights which timesteps of the skeleton sequence drove the
+        predicted (or given) class, using the feature map that feeds the
+        model's ``GlobalAveragePooling1D`` layer.
+
+        Parameters
+        ----------
+        X: np.ndarray, shape = (n_samples, n_channels, n_timepoints),
+            The input samples.
+        class_idx: np.ndarray, shape = (n_samples,), optional,
+            The class to explain for each sample. Defaults to the model's
+            own prediction.
+
+        Returns
+        -------
+        cam: np.ndarray, shape = (n_samples, n_timepoints),
+            Non-negative importance of each timestep, one curve per sample.
+        """
+        model = tf.keras.models.load_model(
+            self.output_dir + self.best_file_name + ".keras", compile=False
+        )
+
+        gap_layer_idx = next(
+            i
+            for i, layer in enumerate(model.layers)
+            if isinstance(layer, tf.keras.layers.GlobalAveragePooling1D)
+        )
+        feature_layer = model.layers[gap_layer_idx].input
+
+        feature_model = tf.keras.models.Model(
+            inputs=model.input, outputs=[feature_layer, model.output]
+        )
+
+        X_in = tf.convert_to_tensor(np.swapaxes(X, axis1=1, axis2=2), dtype=tf.float32)
+
+        if class_idx is None:
+            _, probas = feature_model(X_in, training=False)
+            class_idx = np.argmax(probas.numpy(), axis=1)
+
+        with tf.GradientTape() as tape:
+            tape.watch(X_in)
+            feature_maps, probas = feature_model(X_in, training=False)
+            target_scores = tf.gather(probas, class_idx, axis=1, batch_dims=1)
+
+        grads = tape.gradient(target_scores, feature_maps)
+        weights = tf.reduce_mean(grads, axis=1)
+
+        cam = tf.einsum("btc,bc->bt", feature_maps, weights)
+        cam = tf.nn.relu(cam)
+
+        cam = cam.numpy()
+        max_per_sample = np.max(cam, axis=1, keepdims=True)
+        max_per_sample[max_per_sample == 0] = 1.0
+
+        return cam / max_per_sample
+
+    def compute_joint_saliency(
+        self,
+        X: np.ndarray,
+        class_idx: np.ndarray = None,
+    ) -> np.ndarray:
+        """
+        Compute a per-joint saliency importance vector.
+
+        Highlights which skeleton joints drove the predicted (or given)
+        class, via the gradient of the class score with respect to the
+        input skeleton channels.
+
+        Parameters
+        ----------
+        X: np.ndarray, shape = (n_samples, n_channels, n_timepoints),
+            The input samples.
+        class_idx: np.ndarray, shape = (n_samples,), optional,
+            The class to explain for each sample. Defaults to the model's
+            own prediction.
+
+        Returns
+        -------
+        saliency: np.ndarray, shape = (n_samples, n_joints),
+            Non-negative importance of each joint, one vector per sample.
+        """
+        model = tf.keras.models.load_model(
+            self.output_dir + self.best_file_name + ".keras", compile=False
+        )
+
+        X_in = tf.convert_to_tensor(np.swapaxes(X, axis1=1, axis2=2), dtype=tf.float32)
+
+        if class_idx is None:
+            probas = model(X_in, training=False)
+            class_idx = np.argmax(probas.numpy(), axis=1)
+
+        with tf.GradientTape() as tape:
+            tape.watch(X_in)
+            probas = model(X_in, training=False)
+            target_scores = tf.gather(probas, class_idx, axis=1, batch_dims=1)
+
+        grads = tape.gradient(target_scores, X_in)
+        grads = tf.abs(grads).numpy()
+
+        n_samples, length_TS, n_channels = grads.shape
+        n_joints = n_channels // self.n_dim
+
+        grads = grads.reshape(n_samples, length_TS, n_joints, self.n_dim)
+        saliency = grads.sum(axis=(1, 3))
+
+        max_per_sample = np.max(saliency, axis=1, keepdims=True)
+        max_per_sample[max_per_sample == 0] = 1.0
+
+        return saliency / max_per_sample
+
     def visualize_latent_space(
         self,
         X: np.ndarray,
